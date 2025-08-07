@@ -1,0 +1,99 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consulta de Avance por Territorio</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ecf0f3;
+            text-align: center;
+            padding: 30px;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="number"] {
+            padding: 10px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        #resultado {
+            margin-top: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+            font-size: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        a.ver-plano {
+            display: inline-block;
+            margin-top: 15px;
+            text-decoration: none;
+            color: #0056b3;
+            font-weight: bold;
+        }
+        a.ver-plano:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Consulta de Avance por Territorio</h1>
+    <p>Ingresa número de territorio:</p>
+    <input type="number" id="territorio" min="1" max="99" />
+    <button onclick="consultar()">Consultar</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function consultar() {
+            const territorio = document.getElementById("territorio").value.trim();
+            const resultado = document.getElementById("resultado");
+
+            if (!territorio || isNaN(territorio)) {
+                resultado.innerHTML = "⚠️ Ingresa un número de territorio válido.";
+                return;
+            }
+
+            const response = await fetch("datos.csv");
+            const data = await response.text();
+            const lineas = data.split("\n").slice(1);
+            const coincidencias = lineas
+                .map(linea => linea.trim().split(","))
+                .filter(col => col[0] === territorio);
+
+            if (coincidencias.length > 0) {
+                const fechaRaw = coincidencias[0][1];
+                const estado = coincidencias[0][2] || "No iniciado";
+
+                let fechaTexto = "Sin fecha de inicio";
+                if (fechaRaw && !isNaN(new Date(fechaRaw))) {
+                    const fechaObj = new Date(fechaRaw);
+                    const opciones = { weekday: 'long', day: '2-digit', month: 'long' };
+                    const fechaFormateada = fechaObj.toLocaleDateString('es-CL', opciones);
+                    fechaTexto = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
+                }
+
+                const num = String(territorio).padStart(2, '0');
+                resultado.innerHTML = `
+                    <strong>Fecha de inicio:</strong> ${fechaTexto}<br>
+                    <strong>Estado:</strong> ${estado}<br>
+                    <a class="ver-plano" href="planos/N${num}.jpg" target="_blank">🗺️ Ver plano del territorio</a>
+                `;
+            } else {
+                resultado.innerHTML = `⚠️ Territorio ${territorio} no se encuentra registrado.`;
+            }
+        }
+    </script>
+</body>
+</html>
