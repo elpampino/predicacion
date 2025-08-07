@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -65,14 +64,16 @@
                 return;
             }
 
-            const url = "https://script.google.com/macros/s/AKfycby_I5fkog8OSbIpjyO49a4Vt6srBn2VT6XL2t-KPXb8N7yGgSSswd3YTLC17Dp-3EoTuA/exec?territorio=" + territorio;
-            resultado.innerHTML = "⏳ Consultando...";
+            const response = await fetch("datos.csv");
+            const data = await response.text();
+            const lineas = data.split("\n").slice(1);
+            const coincidencias = lineas
+                .map(linea => linea.trim().split(";"))  // <- CAMBIO AQUÍ
+                .filter(col => col[0] === territorio);
 
-            try {
-                const response = await fetch(url);
-                const texto = await response.text();
-                const [fechaRaw, estadoRaw] = texto.split("|");
-                const estado = estadoRaw?.trim() || "No iniciado";
+            if (coincidencias.length > 0) {
+                const fechaRaw = coincidencias[0][1];
+                const estado = coincidencias[0][2] || "No iniciado";
 
                 let fechaTexto = "Sin fecha de inicio";
                 if (fechaRaw && !isNaN(new Date(fechaRaw))) {
@@ -88,11 +89,11 @@
                     <strong>Estado:</strong> ${estado}<br>
                     <a class="ver-plano" href="planos/N${num}.jpg" target="_blank">🗺️ Ver plano del territorio</a>
                 `;
-            } catch (error) {
-                resultado.innerHTML = "❌ Error al consultar el territorio.";
-                console.error("Error:", error);
+            } else {
+                resultado.innerHTML = `⚠️ Territorio ${territorio} no se encuentra registrado.`;
             }
         }
     </script>
 </body>
 </html>
+
